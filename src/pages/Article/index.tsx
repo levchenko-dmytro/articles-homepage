@@ -1,39 +1,80 @@
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useGetArticleByIdQuery } from '../../app/api';
-import { Container, Typography, CircularProgress, Alert, Link } from '@mui/material';
+import { Container, Typography, CircularProgress, Alert, Button } from '@mui/material';
 import styles from './Article.module.scss';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import AppImage from '../../components/AppImage';
+import { useEffect } from 'react';
 import { useAppSelector } from '../../hooks';
+import { useDispatch } from 'react-redux';
+import { setKeywords } from '../../app/articlesSlice';
+import TextWithHighlights from '../../components/TextWithHighlights';
 
 export default function Article() {
   const { id } = useParams();
   const numericId = Number(id);
   const { data, isLoading, isError } = useGetArticleByIdQuery(numericId);
+  const keywords = useAppSelector(s => s.app.keywords)
+  const dispatch = useDispatch()
 
-  const page = useAppSelector(s => s.app.pageNum)
+  useEffect(() => {
+    const savedKeywords = sessionStorage.getItem('keywords')
+    if (!savedKeywords) return
 
-  const url = page ? `/articles?page=${page}` : '/articles'
+    dispatch(setKeywords(JSON.parse(savedKeywords)))
+  }, [])
+
 
   return (
-    <Container className={styles.container}>
-      {isLoading && <CircularProgress />}
+    <>
+      {isLoading && <CircularProgress
+        style={{
+         position: 'fixed',
+         top: '50%',
+         left: '50%', 
+        }}
+      />}
       {isError && <Alert severity="error">Failed to load the article.</Alert>}
       {data && (
         <>
-          <Typography variant="h4" gutterBottom>
-            {data.title}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {new Date(data.published_at).toLocaleString()}
-          </Typography>
-          <Typography variant="body1" className={styles.content}>
-            {data.summary}
-          </Typography>
+          <AppImage data={data} height="245px" />
+          <Container className={styles.container}>
+            <TextWithHighlights
+              text={data.title}
+              keywords={keywords}
+              variant="h5"
+              textAlign="center"
+            />
 
-          <Link component={RouterLink} to={url} underline="hover" className={styles.back}>
-            ‹ Back to homepage
-          </Link>
+            <TextWithHighlights
+              text={data.summary}
+              keywords={keywords}
+              fontSize={16}
+              variant="body1"
+            />
+
+            <Button onClick={() => history.back()} className={styles.back}>
+              <ArrowBack
+                className={styles.arrow}
+                style={{
+                  color: '#363636',
+                  height: '16px',
+                  width: '16px',
+                }}
+              />
+
+              <Typography
+                variant="button"
+                fontSize={16}
+                fontWeight={700}
+                textTransform="none"
+              >
+                Back to homepage
+              </Typography>
+            </Button>
+          </Container>
         </>
       )}
-    </Container>
+    </>
   );
 }

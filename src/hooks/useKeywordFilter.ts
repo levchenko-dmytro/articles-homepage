@@ -13,10 +13,12 @@ const countMatches = (text: string, keywords: string[]) => {
   return keywords.reduce((acc, k) => acc + (lower.includes(k) ? 1 : 0), 0);
 };
 
-export const useKeywordFilter = (articles: Article[] | undefined, rawKeywords: string) => {
+export const useKeywordFilter = (articles: Article[] | undefined, rawKeywords: string | null) => {
   return useMemo(() => {
     if (!articles || !articles.length) return { filtered: [], keywords: [] as string[] };
     const keywords = normalizeKeywords(rawKeywords);
+    
+    sessionStorage.setItem('keywords', JSON.stringify(keywords))
 
     if (!keywords.length) return { filtered: articles.map(a => ({ ...a, rankScore: 0, titleMatches: 0, summaryMatches: 0 })), keywords };
 

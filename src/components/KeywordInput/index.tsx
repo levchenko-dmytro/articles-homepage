@@ -1,12 +1,20 @@
 import { TextField, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useAppDispatch, useAppSelector } from '../../hooks';
-import { setKeywords } from '../../app/articlesSlice';
 import styles from './KeywordInput.module.scss';
+import { useDebounce } from '../../hooks/useDebounce';
+import type { ChangeEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export default function KeywordInput() {
-  const dispatch = useAppDispatch();
-  const keywords = useAppSelector((s) => s.app.keywords);
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const keywordInputHandler = useDebounce<ChangeEvent<HTMLTextAreaElement | HTMLInputElement>>((e) => {
+    const value = e.target.value
+    setSearchParams({ search: value})
+
+    if (!value) setSearchParams({})
+  }, 500)
+
 
   return (
     <div className={styles.wrapper}>
@@ -14,8 +22,8 @@ export default function KeywordInput() {
         fullWidth
         variant="outlined"
         label="Filter by keywords"
-        value={keywords}
-        onChange={(e) => dispatch(setKeywords(e.target.value))}
+        defaultValue={searchParams.get('search')}
+        onChange={keywordInputHandler}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">

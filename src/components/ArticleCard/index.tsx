@@ -1,10 +1,13 @@
-import { Card, CardContent, CardActionArea, Typography, CardMedia } from '@mui/material';
+import { Card, CardContent, CardActionArea, Typography, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import cn from 'classnames';
 import styles from './ArticleCard.module.scss';
 import type { Article } from '../../types/article';
 import { truncate } from '../../utils/text';
-import { highlightText } from '../../utils/highlight';
+import { format } from 'date-fns'
+import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
+import ArrowForward from '@mui/icons-material/ArrowForward';
+import AppImage from '../AppImage';
+import TextWithHighlights from '../TextWithHighlights';
 
 type Props = {
   article: Article;
@@ -12,42 +15,69 @@ type Props = {
 };
 
 export default function ArticleCard({ article, keywords }: Props) {
-  const titleParts = highlightText(article.title, keywords);
   const summaryTruncated = truncate(article.summary || '', 100);
-  const summaryParts = highlightText(summaryTruncated, keywords);
+
+  const date = format(new Date(article.published_at), 'MMM do, yyyy')
 
   return (
     <Card className={styles.card} elevation={2}>
-      <CardActionArea component={RouterLink} to={`/articles/${article.id}`}>
-      {article.image_url && (
-          <CardMedia component="img" height="160" image={article.image_url} alt={article.title} className={styles.image} />
+      <CardActionArea
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flexGrow: 1,
+          rowGap: '24px',
+        }}
+        component={RouterLink}
+        to={`/articles/${article.id}`}
+      >
+        {article.image_url && (
+          <AppImage data={article} height="218px" />
         )}
-        <CardContent>
-          <Typography variant="caption" color="text.secondary">
-            {new Date(article.published_at).toLocaleDateString()}
-          </Typography>
+        <CardContent className={styles.cardContent}>
+          <Stack direction="row" alignItems="center" gap="8px">
+            <CalendarTodayOutlined color="disabled" fontSize="small" />
+            <Typography fontSize={14} lineHeight={1}>
+              {date}
+            </Typography>
+          </Stack>
 
-          <Typography variant="h6" className={styles.title}>
-            {titleParts.map((p, i) => (
-              <span key={i} className={cn({ [styles.highlight]: p.matched })}>
-                {p.text}
-              </span>
-            ))}
-          </Typography>
+          <TextWithHighlights
+              text={article.title}
+              keywords={keywords}
+              variant="h5"
+            />
 
-          <Typography variant="body2" color="text.secondary" className={styles.summary}>
-            {summaryParts.map((p, i) => (
-              <span key={i} className={cn({ [styles.highlight]: p.matched })}>
-                {p.text}
-              </span>
-            ))}
-          </Typography>
+          <Stack style={{
+            rowGap: "20px",
+            marginTop: "auto",
+          }}>
+            <TextWithHighlights
+              text={summaryTruncated}
+              keywords={keywords}
+              fontSize={16} 
+              variant="body1"
+            />
+            <Stack
+              className={styles.readMoreWrapper}
+              style={{
+                display: "inline-flex",
+                flexDirection: "row",
+                columnGap: "8px",
+                alignItems: "center",
+                width: "fit-content",
+              }}
+            >
+              <Typography fontSize={16} fontWeight={700}>
+                Read more
+              </Typography>
 
-          <Typography variant="button" className={styles.readMore}>
-            Read more →
-          </Typography>
+              <ArrowForward className={styles.arrow} />
+            </Stack>
+          </Stack>
+
         </CardContent>
       </CardActionArea>
-    </Card>
+    </Card >
   );
 }

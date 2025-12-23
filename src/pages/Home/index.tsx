@@ -1,52 +1,51 @@
-import { useGetArticlesQuery } from '../../app/api';
-import { Container, Typography, CircularProgress, Alert, Grid, Pagination } from '@mui/material';
-import KeywordInput from '../../components/KeywordInput';
-import ArticleCard from '../../components/ArticleCard';
-import { useKeywordFilter } from '../../hooks/useKeywordFilter';
-import { useAppDispatch, useAppSelector } from '../../hooks';
-import styles from './Home.module.scss';
-import { useSearchParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { setPageNum } from '../../app/articlesSlice';
+import { Container, Typography, CircularProgress, Alert, Grid, Pagination } from "@mui/material";
+import { useSearchParams } from "react-router-dom";
+import { useGetArticlesQuery } from "../../app/api";
+import ArticleCard from "../../components/ArticleCard";
+import KeywordInput from "../../components/KeywordInput";
+import { useKeywordFilter } from "../../hooks/useKeywordFilter";
+import styles from "./Home.module.scss"
+import { useEffect, useState } from "react";
+
+const ARTICLES_PER_PAGE = 6;
 
 export default function Home() {
-  const [windowSize, setWindowsize] = useState<'small' | 'large'>('small')
-  const dispatch = useAppDispatch()
-
+  const { data, isLoading, isError } = useGetArticlesQuery({ limit: 100 });
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageParam = parseInt(searchParams.get('page') || '1');
-  const page = Math.max(pageParam, 1);
+  const [paginationSize, setPaginationSize] = useState<'small' | 'large'>('large')
 
-  const { data, isLoading, isError } = useGetArticlesQuery({ limit: 12, offset: page * 12 - 12 });
-
-  const keywordsRaw = useAppSelector((s) => s.app.keywords);
+  const keywordsRaw = searchParams.get('search')
 
   const { filtered, keywords } = useKeywordFilter(data?.results, keywordsRaw);
 
-  const totalPages = data ? Math.floor(data.count / 12) : 1
+  const pageParam = parseInt(searchParams.get('page') || '1', 10);
+  const page = Math.max(pageParam, 1);
 
-  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => { 
-    setSearchParams({ page: value.toString() });
-    dispatch(setPageNum(value.toString()))
+  const totalPages = Math.ceil(filtered.length / ARTICLES_PER_PAGE);
+  const paginated = filtered.slice((page - 1) * ARTICLES_PER_PAGE, page * ARTICLES_PER_PAGE);
+
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    const search = searchParams.get('search');
+
+    if (search) {
+      setSearchParams({ page: value.toString(), search });
+      return;
+    }
+
+    setSearchParams({ ...searchParams, page: value.toString() });
   };
 
   useEffect(() => {
-    const resizer = () => {
-      if (window.innerWidth < 600) setWindowsize('small');
-      if (window.innerWidth >= 600) setWindowsize('large');
+    const getPaginationSize = () => {
+      if (window.innerWidth < 600) setPaginationSize('small');
+      if (window.innerWidth >= 600) setPaginationSize('large');
     }
 
-    resizer()
+    getPaginationSize()
 
-    const page = searchParams.get('page')
+    window.addEventListener('resize', getPaginationSize);
 
-    if (page) dispatch(setPageNum(page))
-
-    window.addEventListener('resize', resizer)
-
-    return () => {
-      window.removeEventListener('resize', resizer)
-    }
+    return () => window.removeEventListener('resize', getPaginationSize)
   }, [])
 
   return (
@@ -57,13 +56,24 @@ export default function Home() {
 
       <KeywordInput />
 
-      {isLoading && <CircularProgress />}
+      {isLoading && <CircularProgress
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+        }}
+      />}
       {isError && <Alert severity="error">Failed to load articles.</Alert>}
 
       {!isLoading && !isError && (
         <>
-          <Grid container spacing={2}>
-            {filtered.map((article) => (
+          {keywords.length > 0 && (
+            <Typography variant="h6" fontSize={16} marginTop={5}>
+              Results: {filtered.length}
+            </Typography>
+          )}
+          <Grid container spacing={5.5} marginTop={6}>
+            {paginated.map((article) => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={article.id}>
                 <ArticleCard article={article} keywords={keywords} />
               </Grid>
@@ -71,11 +81,16 @@ export default function Home() {
           </Grid>
 
           {totalPages > 1 && (
-            <Pagination className={styles.pagination} count={totalPages} page={page} onChange={handlePageChange}
-              color="primary"
-              shape="rounded"
-              size={windowSize}
-            />
+            <div className={styles.paginationWrapper}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                color="standard"
+                shape="rounded"
+                size={paginationSize}
+              />
+            </div>
           )}
         </>
       )}

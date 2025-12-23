@@ -1,24 +1,37 @@
 .card {
+  display: flex;
   height: 100%;
 }
 
-.title {
-  margin-top: 4px;
+.actionArea {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  row-gap: 24px;
 }
 
-.summary {
-  margin-top: 6px;
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  row-gap: 20px;
 }
 
-.readMore {
-  display: inline-block;
-  margin-top: 8px;
-}
-
-.highlight {
-  background-color: #fff59d;
-}
-
-.image { 
+.image {
   object-fit: cover;
+}
+
+.readMoreWrapper {
+  .arrow {
+    color: #363636;
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s;
+  }
+  
+  &:hover {
+    .arrow {
+      transform: translateX(25%);
+    }
+  }
 }

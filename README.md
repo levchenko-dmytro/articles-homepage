@@ -30,3 +30,6 @@ Clone the repository and install dependencies:
 git clone https://github.com/levchenko-dmytro/articles-homepage.git
 cd articles-homepage
 npm install
+```
+### 🔗 Link to App
+**Demo:** [Article-homepage](https://articles-homepage.vercel.app/)
